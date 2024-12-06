@@ -420,104 +420,93 @@ def search_book_reviews(book_id):
         return f"❌ Error: Failed to connect to the API - {str(e)}"
 
 # Gradio Interface
+# Rebecca Rogovich
 
 # First: Movies tab:
 with gr.Blocks() as demo:
-    gr.Markdown("# 🎥 Movie Review App")
-    
-    with gr.Tab("Home Page"):
-       
-       
+    gr.Markdown("# 🎥 📺 📚Welcome to our Media Recommendation App!!")
+
+    with gr.Tab("Movies"):
+        gr.Markdown("# 🎥 Movies")
         with gr.Row():
-            gr.Markdown("# Welcome to our Media Recommendation App!!")
-            #Display Genres
-            genres = movies.view_movie_genre()
-            value = ", ".join(genres) if genres else "No genres available"
-            movie_genres = gr.Textbox(value = value , label = "Movies genres")
-        # Display Top Movies
+            gr.Markdown("## Add a Movie")
+            movie_name_input = gr.Textbox(label="Movie Name", placeholder="Enter movie name...")
+            genre_input = gr.Textbox(label="Genre", placeholder="Enter movie genre...")
+            movie_add_btn = gr.Button("Add Movie")
+            movie_output = gr.Textbox(label="Status")
+            movie_add_btn.click(add_movie_frontend, inputs=[movie_name_input, genre_input], outputs=movie_output)
+
         with gr.Row():
-            movie = movies.view_top_movies()
-            value = ", ".join(movie) if movie else "No movies available"
-            top_movies = gr.Textbox(value= value, label = "Top rated movies")
+            del_movie_input = gr.Textbox(label="Delete Movie ID", placeholder="Enter movie ID...")
+            del_movie_btn = gr.Button("Delete Movie")
+            del_movie_output = gr.Textbox(label="Status")
+            del_movie_btn.click(delete_movie_frontend, inputs=del_movie_input, outputs=del_movie_output)       
 
+        with gr.Row():
+            gr.Markdown("## Add a Review")
+            movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
+            rating_input = gr.Slider(0, 5, step=0.5, label="Rating")
+            review_note_input = gr.Textbox(label="Review Note", placeholder="Write your review...")
+            review_add_btn = gr.Button("Add Review")
+            review_output = gr.Textbox(label="Status")
+            review_add_btn.click(
+                add_review_frontend,
+                inputs=[movie_id_input, rating_input, review_note_input],
+                outputs=review_output,
+            )
+        with gr.Row():
+            gr.Markdown("## Edit a Review")
+            edit_movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
+            edit_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
+            edit_rating_input = gr.Slider(0, 5, step=0.5, label="New Rating")
+            edit_review_note_input = gr.Textbox(label="New Review Note", placeholder="Update your review...")
+            edit_review_btn = gr.Button("Edit Review")
+            edit_review_output = gr.Textbox(label="Status")
+            edit_review_btn.click(
+                edit_review_frontend,
+                inputs=[edit_movie_id_input, edit_review_id_input, edit_rating_input, edit_review_note_input],
+                outputs=edit_review_output,
+            )
 
-    with gr.Tab("Add a Movie"):
-        movie_name_input = gr.Textbox(label="Movie Name", placeholder="Enter movie name...")
-        genre_input = gr.Textbox(label="Genre", placeholder="Enter movie genre...")
-        movie_add_btn = gr.Button("Add Movie")
-        movie_output = gr.Textbox(label="Status")
-        movie_add_btn.click(add_movie_frontend, inputs=[movie_name_input, genre_input], outputs=movie_output)
+        with gr.Row():
+            gr.Markdown("## Delete a Review")
+            del_movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
+            del_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
+            del_review_btn = gr.Button("Delete Review")
+            del_review_output = gr.Textbox(label="Status")
+            del_review_btn.click(
+                delete_review_frontend,
+                inputs=[del_movie_id_input, del_review_id_input],
+                outputs=del_review_output,
+            )
 
-    with gr.Tab("Add a Review"):
-        movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
-        rating_input = gr.Slider(0, 5, step=0.5, label="Rating")
-        review_note_input = gr.Textbox(label="Review Note", placeholder="Write your review...")
-        review_add_btn = gr.Button("Add Review")
-        review_output = gr.Textbox(label="Status")
-        review_add_btn.click(
-            add_review_frontend,
-            inputs=[movie_id_input, rating_input, review_note_input],
-            outputs=review_output,
-        )
+        with gr.Row():
+            gr.Markdown("## Search by genre")
+            genre_search_input = gr.Textbox(label="Genre", placeholder="Enter genre to search...")
+            genre_search_btn = gr.Button("Search by Genre")
+            genre_search_output = gr.Textbox(label="Movies by Genre", interactive=False)
+            genre_search_btn.click(search_by_genre_frontend, inputs=genre_search_input, outputs=genre_search_output)
 
-    with gr.Tab("Edit a Review"):
-        edit_movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
-        edit_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
-        edit_rating_input = gr.Slider(0, 5, step=0.5, label="New Rating")
-        edit_review_note_input = gr.Textbox(label="New Review Note", placeholder="Update your review...")
-        edit_review_btn = gr.Button("Edit Review")
-        edit_review_output = gr.Textbox(label="Status")
-        edit_review_btn.click(
-            edit_review_frontend,
-            inputs=[edit_movie_id_input, edit_review_id_input, edit_rating_input, edit_review_note_input],
-            outputs=edit_review_output,
-        )
+        with gr.Row():
+            gr.Markdown("## Search Reviews by Movie ID")
+            search_movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
+            search_reviews_btn = gr.Button("Search Reviews")
+            search_reviews_output = gr.Textbox(label="Reviews", interactive=False)
+            search_reviews_btn.click(search_reviews_frontend, inputs=search_movie_id_input, outputs=search_reviews_output)
 
-    with gr.Tab("Delete a Movie"):
-        del_movie_input = gr.Textbox(label="Delete Movie ID", placeholder="Enter movie ID...")
-        del_movie_btn = gr.Button("Delete Movie")
-        del_movie_output = gr.Textbox(label="Status")
-        del_movie_btn.click(delete_movie_frontend, inputs=del_movie_input, outputs=del_movie_output)
+        with gr.Row():
+            gr.Markdown("## View Movies")
+            view_movies_btn = gr.Button("View All Movies")
+            movies_display = gr.Textbox(label="Movie List", interactive=False)
+            view_movies_btn.click(view_movies_frontend, inputs=[], outputs=movies_display)
 
-    with gr.Tab("Delete a Review"):
-        del_movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
-        del_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
-        del_review_btn = gr.Button("Delete Review")
-        del_review_output = gr.Textbox(label="Status")
-        del_review_btn.click(
-            delete_review_frontend,
-            inputs=[del_movie_id_input, del_review_id_input],
-            outputs=del_review_output,
-        )
-
-    with gr.Tab("Search by Genre"):
-        genre_search_input = gr.Textbox(label="Genre", placeholder="Enter genre to search...")
-        genre_search_btn = gr.Button("Search by Genre")
-        genre_search_output = gr.Textbox(label="Movies by Genre", interactive=False)
-        genre_search_btn.click(search_by_genre_frontend, inputs=genre_search_input, outputs=genre_search_output)
-
-    with gr.Tab("Search Reviews by Movie ID"):
-        search_movie_id_input = gr.Textbox(label="Movie ID", placeholder="Enter movie ID...")
-        search_reviews_btn = gr.Button("Search Reviews")
-        search_reviews_output = gr.Textbox(label="Reviews", interactive=False)
-        search_reviews_btn.click(search_reviews_frontend, inputs=search_movie_id_input, outputs=search_reviews_output)
-
-    with gr.Tab("View Movies"):
-        view_movies_btn = gr.Button("View All Movies")
-        movies_display = gr.Textbox(label="Movie List", interactive=False)
-        view_movies_btn.click(view_movies_frontend, inputs=[], outputs=movies_display)
-
-
-
-
-
-        
-#tv_show
+#TV Shows Tab
 
     with gr.Tab("TV Shows"):
-        gr.Markdown("## 📺 TV Show ")
+        gr.Markdown("## 📺 TV Shows ")
         
-        with gr.Tab("Add a TV Show"):
+        with gr.Row():
+            gr.Markdown("## Add a TV Show")
             tv_show_title_input = gr.Textbox(label="TV Show Title", placeholder="Enter TV show title...")
             tv_genre_input = gr.Textbox(label="Genre", placeholder="Enter TV show genre...")
             tv_add_btn = gr.Button("Add TV Show")
@@ -525,7 +514,14 @@ with gr.Blocks() as demo:
             # Ensure this line is within the correct Gradio context
             tv_add_btn.click(add_tv_show_frontend, inputs=[tv_show_title_input, tv_genre_input], outputs=tv_output)
 
-        with gr.Tab("Add a Review"):
+        with gr.Row():
+            del_tv_show_input = gr.Textbox(label="Delete TV Show ID", placeholder="Enter TV show ID...")
+            del_tv_show_btn = gr.Button("Delete TV Show")
+            del_tv_show_output = gr.Textbox(label="Status")
+            del_tv_show_btn.click(delete_tv_show_frontend, inputs=del_tv_show_input, outputs=del_tv_show_output)
+
+        with gr.Row():
+            gr.Markdown("## Add a Review")
             tv_show_id_input = gr.Textbox(label="TV Show ID", placeholder="Enter TV show ID...")
             tv_rating_input = gr.Slider(0, 5, step=0.5, label="Rating")
             tv_review_note_input = gr.Textbox(label="Review Note", placeholder="Write your review...")
@@ -537,7 +533,8 @@ with gr.Blocks() as demo:
                 outputs=tv_review_output,
             )
 
-        with gr.Tab("Edit a Review"):
+        with gr.Row():
+            gr.Markdown("## Edit a Review")
             edit_tv_show_id_input = gr.Textbox(label="TV Show ID", placeholder="Enter TV show ID...")
             edit_tv_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
             edit_tv_rating_input = gr.Slider(0, 5, step=0.5, label="New Rating")
@@ -550,13 +547,9 @@ with gr.Blocks() as demo:
                 outputs=edit_tv_review_output,
             )
 
-        with gr.Tab("Delete a TV Show"):
-            del_tv_show_input = gr.Textbox(label="Delete TV Show ID", placeholder="Enter TV show ID...")
-            del_tv_show_btn = gr.Button("Delete TV Show")
-            del_tv_show_output = gr.Textbox(label="Status")
-            del_tv_show_btn.click(delete_tv_show_frontend, inputs=del_tv_show_input, outputs=del_tv_show_output)
 
-        with gr.Tab("Delete a Review"):
+        with gr.Row():
+            gr.Markdown("## Delete a Review")
             del_tv_show_id_input = gr.Textbox(label="TV Show ID", placeholder="Enter TV show ID...")
             del_tv_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
             del_tv_review_btn = gr.Button("Delete Review")
@@ -567,19 +560,22 @@ with gr.Blocks() as demo:
                 outputs=del_tv_review_output,
             )
 
-        with gr.Tab("Search by Genre"):
+        with gr.Row():
+            gr.Markdown("## Search by genre")
             tv_genre_search_input = gr.Textbox(label="Genre", placeholder="Enter genre to search...")
             tv_genre_search_btn = gr.Button("Search by Genre")
             tv_genre_search_output = gr.Textbox(label="TV Shows by Genre", interactive=False)
             tv_genre_search_btn.click(search_tv_by_genre_frontend, inputs=tv_genre_search_input, outputs=tv_genre_search_output)
 
-        with gr.Tab("Search Reviews by TV Show ID"):
+        with gr.Row():
+            gr.Markdown("## Search Reviews by TV Show ID")
             search_tv_show_id_input = gr.Textbox(label="TV Show ID", placeholder="Enter TV show ID...")
             search_tv_reviews_btn = gr.Button("Search Reviews")
             search_tv_reviews_output = gr.Textbox(label="Reviews", interactive=False)
             search_tv_reviews_btn.click(search_tv_reviews_frontend, inputs=search_tv_show_id_input, outputs=search_tv_reviews_output)
 
-        with gr.Tab("View TV Shows"):
+        with gr.Row():
+            gr.Markdown("## View TV Shows")
             view_tv_shows_btn = gr.Button("View All TV Shows")
             tv_shows_display = gr.Textbox(label="TV Show List", interactive=False)
             view_tv_shows_btn.click(view_tv_shows_frontend, inputs=[], outputs=tv_shows_display)
@@ -587,16 +583,24 @@ with gr.Blocks() as demo:
 
 # Books Tab
     with gr.Tab("Books"):
-        gr.Markdown("## 📚 Book Management")
+        gr.Markdown("## 📚 Books")
 
-        with gr.Tab("Add a Book"):
+        with gr.Row():
+            gr.Markdown("## Add a Book")
             book_title_input = gr.Textbox(label="Book Title", placeholder="Enter book title...")
             book_genre_input = gr.Textbox(label="Genre", placeholder="Enter book genre...")
             book_add_btn = gr.Button("Add Book")
             book_output = gr.Textbox(label="Status")
             book_add_btn.click(add_book, inputs=[book_title_input, book_genre_input], outputs=book_output)
 
-        with gr.Tab("Add a Review"):
+        with gr.Row():
+            del_book_input = gr.Textbox(label="Delete Book ID", placeholder="Enter book ID...")
+            del_book_btn = gr.Button("Delete Book")
+            del_book_output = gr.Textbox(label="Status")
+            del_book_btn.click(delete_book, inputs=del_book_input, outputs=del_book_output)
+        
+        with gr.Row():
+            gr.Markdown("## Add a Review")
             book_id_input = gr.Textbox(label="Book ID", placeholder="Enter book ID...")
             rating_input = gr.Slider(0, 5, step=0.5, label="Rating")
             review_note_input = gr.Textbox(label="Review Note", placeholder="Write your review...")
@@ -608,7 +612,8 @@ with gr.Blocks() as demo:
                 outputs=review_output,
             )
 
-        with gr.Tab("Edit a Review"):
+        with gr.Row():
+            gr.Markdown("## Edit a Review")
             edit_book_id_input = gr.Textbox(label="Book ID", placeholder="Enter book ID...")
             edit_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
             edit_rating_input = gr.Slider(0, 5, step=0.5, label="New Rating")
@@ -621,13 +626,8 @@ with gr.Blocks() as demo:
                 outputs=edit_review_output,
             )
 
-        with gr.Tab("Delete a Book"):
-            del_book_input = gr.Textbox(label="Delete Book ID", placeholder="Enter book ID...")
-            del_book_btn = gr.Button("Delete Book")
-            del_book_output = gr.Textbox(label="Status")
-            del_book_btn.click(delete_book, inputs=del_book_input, outputs=del_book_output)
-
-        with gr.Tab("Delete a Review"):
+        with gr.Row():
+            gr.Markdown("## Delete a Review")
             del_book_id_input = gr.Textbox(label="Book ID", placeholder="Enter book ID...")
             del_review_id_input = gr.Textbox(label="Review ID", placeholder="Enter review ID...")
             del_review_btn = gr.Button("Delete Review")
@@ -638,22 +638,28 @@ with gr.Blocks() as demo:
                 outputs=del_review_output,
             )
 
-        with gr.Tab("Search by Genre"):
+        with gr.Row():
+            gr.Markdown("## Search by genre")
             book_genre_search_input = gr.Textbox(label="Genre", placeholder="Enter genre to search...")
             book_genre_search_btn = gr.Button("Search by Genre")
             book_genre_search_output = gr.Textbox(label="Books by Genre", interactive=False)
             book_genre_search_btn.click(search_books_by_genre, inputs=book_genre_search_input, outputs=book_genre_search_output)
 
-        with gr.Tab("Search Reviews by Book ID"):
+        with gr.Row():
+            gr.Markdown("## Search Reviews by Book ID")
             search_book_id_input = gr.Textbox(label="Book ID", placeholder="Enter book ID...")
             search_reviews_btn = gr.Button("Search Reviews")
             search_reviews_output = gr.Textbox(label="Reviews", interactive=False)
             search_reviews_btn.click(search_book_reviews, inputs=search_book_id_input, outputs=search_reviews_output)
 
-        with gr.Tab("View Books"):
+        with gr.Row():
+            gr.Markdown("## View Books")
             view_books_btn = gr.Button("View All Books")
             books_display = gr.Textbox(label="Book List", interactive=False)
             view_books_btn.click(view_books, inputs=[], outputs=books_display)
+
+
+
 
 
 
