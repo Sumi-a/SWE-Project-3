@@ -402,6 +402,22 @@ def view_books():
     except requests.exceptions.RequestException as e:
         return f"❌ Error: Failed to connect to the API - {str(e)}"
 
+def search_book_reviews(book_id):
+    if not book_id.strip().isdigit():
+        return "❌ Error: Book ID must be a valid integer!"
+    try:
+        response = requests.get(f"{BASE_URL}/books/{book_id}/reviews")
+        if response.status_code == 200:
+            reviews = response.json()
+            if not reviews:
+                return f"📚 No reviews found for Book ID {book_id}."
+            output = [f"📚 Reviews for Book ID {book_id}:"]
+            for review in reviews:
+                output.append(f"Review #{review['review_id']} | Rating: {review['rating']}/5 | {review['note']}")
+            return "\n".join(output)
+        return f"❌ Error: {response.json().get('error', 'Unexpected error')}."
+    except requests.exceptions.RequestException as e:
+        return f"❌ Error: Failed to connect to the API - {str(e)}"
 
 # Gradio Interface
 
@@ -499,7 +515,7 @@ with gr.Blocks() as demo:
 #tv_show
 
     with gr.Tab("TV Shows"):
-        gr.Markdown("## 📺 TV Show Management")
+        gr.Markdown("## 📺 TV Show ")
         
         with gr.Tab("Add a TV Show"):
             tv_show_title_input = gr.Textbox(label="TV Show Title", placeholder="Enter TV show title...")
@@ -632,7 +648,7 @@ with gr.Blocks() as demo:
             search_book_id_input = gr.Textbox(label="Book ID", placeholder="Enter book ID...")
             search_reviews_btn = gr.Button("Search Reviews")
             search_reviews_output = gr.Textbox(label="Reviews", interactive=False)
-            search_reviews_btn.click(search_reviews, inputs=search_book_id_input, outputs=search_reviews_output)
+            search_reviews_btn.click(search_book_reviews, inputs=search_book_id_input, outputs=search_reviews_output)
 
         with gr.Tab("View Books"):
             view_books_btn = gr.Button("View All Books")
