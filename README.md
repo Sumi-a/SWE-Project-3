@@ -36,6 +36,8 @@ The Review App is a versatile project designed to manage and review content acro
 - Integration with cloud databases for scalability.
 - Improved analytics and visualization for review trends.
 
+## Running the app:
+Have all the files in the same folder on your device. Run api.py first and then run app.py and open the link in a tab. Enjoy the app!
 
  ## Contributors
  
