@@ -4,9 +4,37 @@
 
 import sqlite3
 
+DATABASE = 'books.db'
+
 # Utility to get a database connection
+import sqlite3
+
+DATABASE = "books.db"  # Use in-memory database for testing
+
 def get_connection():
-    return sqlite3.connect("books.db")
+    """Returns a database connection and initializes tables if necessary."""
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    # Initialize tables if they don't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            genre TEXT NOT NULL
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id INTEGER NOT NULL,
+            rating INTEGER CHECK (rating BETWEEN 1 AND 5),
+            note TEXT NOT NULL,
+            FOREIGN KEY (book_id) REFERENCES books (id)
+        )
+    ''')
+    connection.commit()
+    return connection
+
 
 # Adding a new book with genre
 def add_book(book_title, genre):
@@ -21,17 +49,15 @@ def add_book(book_title, genre):
 
 # Adding a review to a book
 def add_review(book_id, rating, note):
-    connection = get_connection()
-    cursor = connection.cursor()
-    query = "INSERT INTO reviews (book_id, rating, note) VALUES (?, ?, ?)"
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = 'INSERT INTO reviews (book_id, rating, note) VALUES (?, ?, ?)'
     cursor.execute(query, (book_id, rating, note))
-    # Optionally update the reviews_count in books
-    update_query = "UPDATE books SET reviews_count = reviews_count + 1 WHERE id = ?"
-    cursor.execute(update_query, (book_id,))
-    connection.commit()
+    conn.commit()
     review_id = cursor.lastrowid
-    connection.close()
-    return {"message": f"Review added to book ID {book_id}.", "review": {"review_id": review_id, "rating": rating, "note": note}}
+    conn.close()
+    return {"message": f"Review added to book ID {book_id}.", "review_id": review_id}
+
 
 # Editing a review
 def edit_review(book_id, review_id, rating=None, note=None):
@@ -80,17 +106,67 @@ def delete_book(book_id):
 def view_books():
     connection = get_connection()
     cursor = connection.cursor()
-    query = "SELECT id, title, genre, reviews_count FROM books"
+    query = """
+    SELECT b.id, b.title, b.genre, COUNT(r.id) as reviews_count
+    FROM books b
+    LEFT JOIN reviews r ON b.id = r.book_id
+    GROUP BY b.id, b.title, b.genre
+    """
     cursor.execute(query)
     books = [
-        {"id": row[0], "title": row[1], "genre": row[2], "reviews_count": row[3]}
+        {"id": row[0], "title": row[1], "genre": row[2], "reviews_count": row[3], "reviews": []}
         for row in cursor.fetchall()
     ]
     connection.close()
     return books
 
+def search_reviews(book_id):
+    """Search for a book by ID and retrieve its reviews."""
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+    
+    # Fetch the book details
+    cursor.execute('SELECT * FROM books WHERE id = ?', (book_id,))
+    book = cursor.fetchone()
+    if not book:
+        connection.close()
+        return {"error": "Book not found."}
+    
+    # Fetch all reviews for the book
+    cursor.execute('SELECT * FROM reviews WHERE book_id = ?', (book_id,))
+    reviews = cursor.fetchall()
+    connection.close()
+    
+    # Return the book and its reviews
+    return {
+        "id": book[0],
+        "title": book[1],
+        "genre": book[2],
+        "reviews": [{"review_id": r[0], "rating": r[2], "note": r[3]} for r in reviews]
+    }
+
+
+def view_books_with_reviews():
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('SELECT * FROM books')
+    books = cursor.fetchall()
+    result = []
+    for book in books:
+        cursor.execute('SELECT * FROM reviews WHERE book_id = ?', (book[0],))
+        reviews = cursor.fetchall()
+        result.append({
+            "id": book[0],
+            "title": book[1],
+            "genre": book[2],
+            "reviews": [{"review_id": r[0], "rating": r[2], "note": r[3]} for r in reviews]
+        })
+    connection.close()
+    return result
+
+
 # Searching books by genre
-def filter_books_by_genre(genre):
+def search_by_genre(genre):
     connection = get_connection()
     cursor = connection.cursor()
     query = "SELECT id, title, genre FROM books WHERE LOWER(genre) LIKE ?"
@@ -102,30 +178,22 @@ def filter_books_by_genre(genre):
     connection.close()
     return books
 
-# Run initialization when the script is executed
-def initialize_database():
+def view_book_genres():
     connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS books (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            genre TEXT NOT NULL,
-            reviews_count INTEGER DEFAULT 0
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS reviews (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            book_id INTEGER NOT NULL,
-            rating INTEGER NOT NULL,
-            note TEXT NOT NULL,
-            FOREIGN KEY (book_id) REFERENCES books (id)
-        )
-    """)
-    connection.commit()
+    cursor.execute('SELECT DISTINCT genre FROM books')
+    genres = [row[0] for row in cursor.fetchall()]
     connection.close()
+    return genres
 
-if __name__ == "__main__":
-    initialize_database()
+def view_top_books():
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute('SELECT book_id, AVG(rating) as avg_rating FROM reviews GROUP BY book_id ORDER BY avg_rating DESC LIMIT 3')
+    top_books = cursor.fetchall()
+    result = [{"book_id": row[0], "average_rating": row[1]} for row in top_books]
+    connection.close()
+    return result
+
+
 

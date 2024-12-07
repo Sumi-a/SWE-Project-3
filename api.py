@@ -68,57 +68,102 @@ def search_by_genre():
 
 
 # Books Endpoints
+# View all books with reviews
 @app.route('/books', methods=['GET'])
 def get_books():
-    data = books.get_all_books()
-    return jsonify(data), 200
+    try:
+        data = books.view_books()  # Correct function from books.py
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Get a single book by ID
 @app.route('/books/<int:book_id>', methods=['GET'])
 def get_single_book(book_id):
-    book = books.get_book(book_id)
-    if book:
-        return jsonify(book), 200
-    return jsonify({"error": "Book not found"}), 404
+    try:
+        book = books.search_reviews(book_id)  # Retrieves book and its reviews
+        if book:
+            return jsonify(book), 200
+        return jsonify({"error": "Book not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Add a new book
 @app.route('/books', methods=['POST'])
 def create_book():
-    book_data = request.json
-    title = book_data.get('title')
-    if title:
-        new_book = books.add_book(title)
-        return jsonify({"message": "Book added successfully", "book": new_book}), 201
-    return jsonify({"error": "Title is required"}), 400
+    try:
+        book_data = request.json
+        title = book_data.get('title')
+        genre = book_data.get('genre')
+        if title and genre:
+            result = books.add_book(title, genre)
+            return jsonify(result), 201
+        return jsonify({"error": "Title and Genre are required"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Add a review to a book
 @app.route('/books/<int:book_id>/reviews', methods=['POST'])
 def create_book_review(book_id):
-    review_data = request.json
-    rating = review_data.get('rating')
-    note = review_data.get('note')
-    if rating is not None and note is not None:
-        new_review = books.add_review(book_id, rating, note)
-        if new_review:
-            return jsonify({"message": "Review added successfully", "review": new_review}), 201
-        return jsonify({"error": "Book not found"}), 404
-    return jsonify({"error": "Rating and note are required"}), 400
+    try:
+        review_data = request.json
+        rating = review_data.get('rating')
+        note = review_data.get('note')
+        if rating is not None and note:
+            result = books.add_review(book_id, rating, note)
+            return jsonify(result), 201
+        return jsonify({"error": "Rating and Note are required"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Edit a review for a book
+@app.route('/books/<int:book_id>/reviews/<int:review_id>', methods=['PUT'])
+def edit_book_review(book_id, review_id):
+    try:
+        review_data = request.json
+        rating = review_data.get('rating')
+        note = review_data.get('note')
+        result = books.edit_review(book_id, review_id, rating, note)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Delete a review for a book
+@app.route('/books/<int:book_id>/reviews/<int:review_id>', methods=['DELETE'])
+def delete_book_review(book_id, review_id):
+    try:
+        result = books.delete_review(book_id, review_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Delete a book and its reviews
 @app.route('/books/<int:book_id>', methods=['DELETE'])
 def delete_single_book(book_id):
-    success = books.delete_book(book_id)
-    if success:
-        return jsonify({"message": f"Book ID {book_id} deleted"}), 200
-    return jsonify({"error": "Book not found"}), 404
+    try:
+        result = books.delete_book(book_id)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Search books by genre
 @app.route('/books/genre', methods=['GET'])
 def get_books_by_genre():
-    genre = request.args.get('genre', '')
-    filtered_books = books.filter_books_by_genre(genre)
-    if not filtered_books:
-        return jsonify({"message": f"No books found in the '{genre}' genre."}), 404
-    return jsonify(filtered_books), 200
+    try:
+        genre = request.args.get('genre', '').strip()
+        if not genre:
+            return jsonify({"error": "Genre is required"}), 400
+        filtered_books = books.search_by_genre(genre)
+        if not filtered_books:
+            return jsonify({"message": f"No books found in the '{genre}' genre."}), 404
+        return jsonify(filtered_books), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-# Removed the duplicate endpoint
-
-
+@app.route('/books/<int:book_id>', methods=['GET'])
+def get_book_with_reviews(book_id):
+    result = books.search_reviews(book_id)
+    return jsonify(result), 200
 
 
 # Tv_shows Endpoint
