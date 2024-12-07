@@ -1,16 +1,18 @@
 # Core Backend Functioning of book tab of the review app
 # Author: Kai Francis
-# Date: Updated December 2, 2024
+# Date: Updated December 6, 2024
 
 import sqlite3
 
-DATABASE = 'books.db'
+# Utility to get a database connection
+def get_connection():
+    return sqlite3.connect("books.db")
 
 # Adding a new book with genre
 def add_book(book_title, genre):
     connection = get_connection()
     cursor = connection.cursor()
-    query = "INSERT INTO books (title, genre) VALUES (%s, %s)"
+    query = "INSERT INTO books (title, genre) VALUES (?, ?)"
     cursor.execute(query, (book_title, genre))
     connection.commit()
     book_id = cursor.lastrowid
@@ -21,10 +23,10 @@ def add_book(book_title, genre):
 def add_review(book_id, rating, note):
     connection = get_connection()
     cursor = connection.cursor()
-    query = "INSERT INTO reviews (book_id, rating, note) VALUES (%s, %s, %s)"
+    query = "INSERT INTO reviews (book_id, rating, note) VALUES (?, ?, ?)"
     cursor.execute(query, (book_id, rating, note))
     # Optionally update the reviews_count in books
-    update_query = "UPDATE books SET reviews_count = reviews_count + 1 WHERE id = %s"
+    update_query = "UPDATE books SET reviews_count = reviews_count + 1 WHERE id = ?"
     cursor.execute(update_query, (book_id,))
     connection.commit()
     review_id = cursor.lastrowid
@@ -39,14 +41,14 @@ def edit_review(book_id, review_id, rating=None, note=None):
     values = []
 
     if rating is not None:
-        updates.append("rating = %s")
+        updates.append("rating = ?")
         values.append(rating)
     if note is not None:
-        updates.append("note = %s")
+        updates.append("note = ?")
         values.append(note)
     values.extend([book_id, review_id])
 
-    query = f"UPDATE reviews SET {', '.join(updates)} WHERE book_id = %s AND id = %s"
+    query = f"UPDATE reviews SET {', '.join(updates)} WHERE book_id = ? AND id = ?"
     cursor.execute(query, tuple(values))
     connection.commit()
     connection.close()
@@ -56,7 +58,7 @@ def edit_review(book_id, review_id, rating=None, note=None):
 def delete_review(book_id, review_id):
     connection = get_connection()
     cursor = connection.cursor()
-    query = "DELETE FROM reviews WHERE book_id = %s AND id = %s"
+    query = "DELETE FROM reviews WHERE book_id = ? AND id = ?"
     cursor.execute(query, (book_id, review_id))
     connection.commit()
     connection.close()
@@ -66,9 +68,9 @@ def delete_review(book_id, review_id):
 def delete_book(book_id):
     connection = get_connection()
     cursor = connection.cursor()
-    query = "DELETE FROM reviews WHERE book_id = %s"
+    query = "DELETE FROM reviews WHERE book_id = ?"
     cursor.execute(query, (book_id,))
-    delete_book_query = "DELETE FROM books WHERE id = %s"
+    delete_book_query = "DELETE FROM books WHERE id = ?"
     cursor.execute(delete_book_query, (book_id,))
     connection.commit()
     connection.close()
@@ -77,54 +79,53 @@ def delete_book(book_id):
 # Viewing all books
 def view_books():
     connection = get_connection()
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT * FROM books"
+    cursor = connection.cursor()
+    query = "SELECT id, title, genre, reviews_count FROM books"
     cursor.execute(query)
-    books = cursor.fetchall()
+    books = [
+        {"id": row[0], "title": row[1], "genre": row[2], "reviews_count": row[3]}
+        for row in cursor.fetchall()
+    ]
     connection.close()
     return books
-
-#search reviews
-def search_reviews(book_id):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM books WHERE id = ?', (book_id,))
-    book = cursor.fetchone()
-    if not book:
-        return {"error": "Book not found."}
-    cursor.execute('SELECT * FROM reviews WHERE book_id = ?', (book_id,))
-    reviews = cursor.fetchall()
-    conn.close()
-    return {
-        "id": book[0],
-        "name": book[1],
-        "genre": book[2],
-        "reviews": [{"review_id": r[0], "rating": r[2], "note": r[3]} for r in reviews]
-    }
 
 # Searching books by genre
-def search_books_by_genre(genre):
+def filter_books_by_genre(genre):
     connection = get_connection()
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT * FROM books WHERE LOWER(genre) LIKE %s"
+    cursor = connection.cursor()
+    query = "SELECT id, title, genre FROM books WHERE LOWER(genre) LIKE ?"
     cursor.execute(query, (f"%{genre.lower()}%",))
-    books = cursor.fetchall()
+    books = [
+        {"id": row[0], "title": row[1], "genre": row[2]}
+        for row in cursor.fetchall()
+    ]
     connection.close()
     return books
 
-# Searching a book by ID
-def search_book_by_id(book_id):
-    connection = get_connection()
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT * FROM books WHERE id = %s"
-    cursor.execute(query, (book_id,))
-    book = cursor.fetchone()
-    connection.close()
-    if book:
-        return {"message": "Book found.", "book": book}
-    return {"error": f"Book with ID {book_id} not found."}
-
-
 # Run initialization when the script is executed
+def initialize_database():
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            genre TEXT NOT NULL,
+            reviews_count INTEGER DEFAULT 0
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL,
+            note TEXT NOT NULL,
+            FOREIGN KEY (book_id) REFERENCES books (id)
+        )
+    """)
+    connection.commit()
+    connection.close()
+
 if __name__ == "__main__":
     initialize_database()
+

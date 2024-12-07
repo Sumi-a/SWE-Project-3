@@ -71,7 +71,7 @@ def search_by_genre():
 @app.route('/books', methods=['GET'])
 def get_books():
     data = books.get_all_books()
-    return jsonify(books), 200
+    return jsonify(data), 200
 
 @app.route('/books/<int:book_id>', methods=['GET'])
 def get_single_book(book_id):
@@ -111,22 +111,12 @@ def delete_single_book(book_id):
 @app.route('/books/genre', methods=['GET'])
 def get_books_by_genre():
     genre = request.args.get('genre', '')
-    filtered_books = filter_books_by_genre(genre)
+    filtered_books = books.filter_books_by_genre(genre)
     if not filtered_books:
         return jsonify({"message": f"No books found in the '{genre}' genre."}), 404
     return jsonify(filtered_books), 200
 
-@app.route('/books/<int:book_id>/reviews', methods=['POST'])
-def add_book_review(book_id):
-    data = request.json
-    rating = data.get('rating')
-    note = data.get('note')
-
-    if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
-        return jsonify({"error": "Rating must be an integer between 1 and 5"}), 400
-
-    response = add_review_to_db(book_id, rating, note)
-    return jsonify(response), 201
+# Removed the duplicate endpoint
 
 
 
